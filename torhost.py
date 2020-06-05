@@ -3,7 +3,10 @@
 import os, sys, signal, socket, time, stem.process, argparse, tempfile
 from stem.control import Controller
 from stem.util import term
-from thread import *
+try:
+	from _thread import *
+except ImportError:
+	from thread import * # Python 2, eww
 
 #
 # These are global constants, to be read but not set anywhere
@@ -53,7 +56,7 @@ def getSocket():
 # Creates an ephemeral onion service, connects it to the locally bound socket,
 # and begins hosting the file
 def startHiddenService(localPort, controlPort, password, filename, sock):
-	print "Starting onion service (this may take a while)..."
+	print("Starting onion service (this may take a while)...")
 	with Controller.from_port(port = controlPort) as ctrl:
 		ctrl.authenticate(password)
 		state = ctrl.create_ephemeral_hidden_service({ServicePort: localPort}, await_publication = True, detached = True)
@@ -72,11 +75,11 @@ def startHiddenService(localPort, controlPort, password, filename, sock):
 def sendHeaders(filename, client):
 	filesize = os.path.getsize(filename)
 	bname = os.path.basename(filename)
-	client.sendall("HTTP/1.1 200 OK\n")
-	client.sendall("Content-Type: application/octet-stream\n")
-	client.sendall("Content-Length: %d\n" % filesize)
-	client.sendall("Content-Disposition: attachment; filename=\"%s\"\n" % bname)
-	client.sendall("\n")
+	client.sendall("HTTP/1.1 200 OK\n".encode())
+	client.sendall("Content-Type: application/octet-stream\n".encode())
+	client.sendall(("Content-Length: %d\n" % filesize).encode())
+	client.sendall(("Content-Disposition: attachment; filename=\"%s\"\n" % bname).encode())
+	client.sendall("\n".encode())
 
 # Sends the file once, to a single client
 # If you want multiple clients, run this function in a loop with threads
@@ -97,8 +100,8 @@ def uploadFile(filename, client):
 		client.close()
 		print(term.format("File upload complete", term.Color.YELLOW))
 	except:
-		print(term.format("Unexpected error: " + str(sys.exc_info()[0]), 
-		      term.Color.RED))
+		err = sys.exc_info()
+		print(term.format("Unexpected error (%s): %s" % err, term.Color.RED))
 
 # This calls uploadFile, either once or as needed, depending on KeepAlive
 def hostFile(filename, sock):
@@ -154,7 +157,7 @@ def startTor():
 # This is a wrapper so I don't have debug if-statements everywhere
 def debugMsg(msg):
 	if( DebugMode == True ):
-		print msg
+		print(msg)
 
 """
 	Warn the user if the file they've asked us to host doesn't exist or isn't

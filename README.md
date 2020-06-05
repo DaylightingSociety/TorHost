@@ -27,3 +27,5 @@ Requirements
 ------------
 
 TorHost requires Stem 1.4 or later, and Tor 0.2.7.1-alpha or later. All other dependencies should have come with Python.
+
+TorHost is compatible with Python 2.7 and 3, though 3 is always preferred.
